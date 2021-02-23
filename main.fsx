@@ -46,26 +46,35 @@ module Covers =
     }
 
     type Benefit = Benefit of decimal
+    type Premium = Premium of decimal
     type PaidOut = PaidOut of decimal
 
-open Covers 
+module Events =
+    open Covers 
 
-type Event =
-| InForce of DefaultCover seq
-| PaidUp of DefaultCover seq
-| Surrendered of PaidOut
-| Disabled of (DisabledCover * (DefaultCover seq))
-| Retired of RetiredCover
-| Dead of PaidOut
+    type Event =
+    | InForce of (Premium * DefaultCover seq)
+    | PaidUp of DefaultCover seq
+    | Surrendered of PaidOut
+    | Disabled of (DisabledCover * (DefaultCover seq))
+    | Retired of RetiredCover
+    | Dead of PaidOut
 
-let ev = InForce([
-    { Benefit = 1000m; BasicCover = (create (65 * 12) |> Expiry1 |> G211) }
-])
+    type Policy = {
+        Birthday: Birthday;
+        Events: Event seq;
+    }
 
-type Policy = {
-    Birthday: Birthday;
-    Events: Event seq;
-}
+    let createEventInForce previousEvent premium =
+        match previousEvent with
+        | InForce _ -> Ok previousEvent
+        | PaidUp covers -> Ok (InForce (premium, covers))
+        | Surrendered _ -> Error ("Surrendered cannot be changed to in force.")
+        | Disabled (_, covers) -> Ok (InForce (premium, covers))
+        | Retired _ -> Error ("Retired cannot be changed to in force.")
+        | Dead _ -> Error ("Dead cannot be changed to in force.")
+
+open Events
 
 type System = {
     Policies: Policy seq;
