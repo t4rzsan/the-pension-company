@@ -42,7 +42,7 @@ module Covers =
 
     type DisabledCover = {
         Benefit: decimal;
-        RetiredBasicCover: DisabledBasicCover;
+        BasicCover: DisabledBasicCover;
     }
 
     type Benefit = Benefit of decimal
@@ -56,7 +56,8 @@ module Events =
     | InForce of (Premium * DefaultCover seq)
     | PaidUp of DefaultCover seq
     | Surrendered of PaidOut
-    | Disabled of (DisabledCover * (DefaultCover seq))
+    | Disabled of (DisabledCover seq * DefaultCover seq)
+    | Reactivated of (Premium * DefaultCover seq)
     | Retired of RetiredCover
     | Dead of PaidOut
 
@@ -65,14 +66,36 @@ module Events =
         Events: Event seq;
     }
 
-    let createEventInForce previousEvent premium =
+    let createEventInForce previousEvent newPremium =
         match previousEvent with
         | InForce _ -> Ok previousEvent
-        | PaidUp covers -> Ok (InForce (premium, covers))
+        | PaidUp covers -> Ok (InForce (newPremium, covers))
         | Surrendered _ -> Error ("Surrendered cannot be changed to in force.")
-        | Disabled (_, covers) -> Ok (InForce (premium, covers))
+        | Disabled _ -> Error ("Disabled cannot be changed to in force.")
+        | Reactivated (_, covers) -> Ok (Reactivated (newPremium, covers))
         | Retired _ -> Error ("Retired cannot be changed to in force.")
         | Dead _ -> Error ("Dead cannot be changed to in force.")
+
+    let getDisabledCovers (covers: DefaultCover seq) =
+        covers 
+        |> Seq.choose (fun cover -> 
+            match cover.BasicCover with
+            | G415 expiry -> Some(cover.Benefit, expiry)
+            | _ -> None
+        )
+        |> Seq.map (fun (benefit, expiry) ->
+            { Benefit = benefit; BasicCover = (G215 expiry)}
+        )
+    
+    let createEventDisabled previousEvent =
+        match previousEvent with
+        | InForce (_, covers) -> Ok (Disabled (covers |> getDisabledCovers, covers))
+        | PaidUp covers -> Ok (Disabled (covers |> getDisabledCovers, covers))
+        | Surrendered _ -> Error ("Surrendered cannot be changed to disabled.")
+        | Disabled _ -> Error ("Disabled cannot be changed to disabled.")
+        | Reactivated (_, covers) -> Ok (Disabled (covers |> getDisabledCovers, covers))
+        | Retired _ -> Error ("Retired cannot be changed to disabled.")
+        | Dead _ -> Error ("Dead cannot be changed to disabled.")
 
 open Events
 
