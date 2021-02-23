@@ -1,3 +1,8 @@
+#load "kleisli.fsx"
+
+open Kleisli
+let (>=>) x y = Kleisli.Optional.Compose x y
+
 module Age = 
     open System
 
@@ -86,14 +91,28 @@ module Events =
         |> Seq.map (fun (benefit, expiry) ->
             { Benefit = benefit; BasicCover = (G215 expiry)}
         )
+        |> Ok
+        |> Result.bind (fun disabledCovers ->
+            if disabledCovers |> Seq.isEmpty then
+                Ok (covers, disabledCovers)
+            else
+                Error ("There are no covers for disability.")
+        )
+
+    let createEventDisabledFromCovers (covers, disabledCovers) =
+        Ok (Disabled (disabledCovers, covers))
     
     let createEventDisabled previousEvent =
+        let getAndCreateDisabledCoversAndEvent = 
+            getDisabledCovers 
+            >=> createEventDisabledFromCovers
+            
         match previousEvent with
-        | InForce (_, covers) -> Ok (Disabled (covers |> getDisabledCovers, covers))
-        | PaidUp covers -> Ok (Disabled (covers |> getDisabledCovers, covers))
+        | InForce (_, covers) -> covers |> getAndCreateDisabledCoversAndEvent
+        | PaidUp covers -> covers |> getAndCreateDisabledCoversAndEvent
         | Surrendered _ -> Error ("Surrendered cannot be changed to disabled.")
         | Disabled _ -> Error ("Disabled cannot be changed to disabled.")
-        | Reactivated (_, covers) -> Ok (Disabled (covers |> getDisabledCovers, covers))
+        | Reactivated (_, covers) -> covers |> getAndCreateDisabledCoversAndEvent
         | Retired _ -> Error ("Retired cannot be changed to disabled.")
         | Dead _ -> Error ("Dead cannot be changed to disabled.")
 
