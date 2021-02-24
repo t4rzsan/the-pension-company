@@ -13,8 +13,13 @@ type Event =
 | Retired of RetiredCover
 | Dead of PaidOut
 
+type PolicyNumber = PolicyNumber of string
+
 type Policy = {
+    PolicyNumber: PolicyNumber;
     Birthday: Birthday;
     Events: Event seq;
 }
 
+let addEvent (events: Event seq) event =
+    Ok (events |> Seq.append [event])
