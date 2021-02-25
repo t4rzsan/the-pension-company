@@ -3,21 +3,14 @@
 #load "covers.fsx"
 #load "events.fsx"
 
+open System
+
 open Kleisli
+open Age
 open Covers
 open Events
 
 let (>=>) x y = Optional.Compose x y
-
-let createEventInForce previousEvent newPremium =
-    match previousEvent with
-    | InForce _ -> Ok previousEvent
-    | PaidUp covers -> Ok (InForce (newPremium, covers))
-    | Surrendered _ -> Error ("Surrendered cannot be changed to in force.")
-    | Disabled _ -> Error ("Disabled cannot be changed to in force.")
-    | Reactivated (_, covers) -> Ok (Reactivated (newPremium, covers))
-    | Retired _ -> Error ("Retired cannot be changed to in force.")
-    | Dead _ -> Error ("Dead cannot be changed to in force.")
 
 let getDisabledCovers (covers: DefaultCover seq) =
     covers 
@@ -32,22 +25,18 @@ let getDisabledCovers (covers: DefaultCover seq) =
     |> Ok
     |> Result.bind (fun disabledCovers ->
         if disabledCovers |> Seq.isEmpty then
-            Ok (covers, disabledCovers)
-        else
             Error ("There are no covers for disability.")
+        else
+            Ok (covers, disabledCovers)
     )
 
 let createEventDisabledFromCovers (covers, disabledCovers) =
     Ok (Disabled (disabledCovers, covers))
 
-let recalculate previousEvent =
-    Ok previousEvent
-
 let createEventDisabled previousEvent =
     let getAndCreateDisabledCoversAndEvent = 
         getDisabledCovers 
         >=> createEventDisabledFromCovers
-        >=> recalculate
         
     match previousEvent with
     | InForce (_, covers) -> covers |> getAndCreateDisabledCoversAndEvent
@@ -58,7 +47,45 @@ let createEventDisabled previousEvent =
     | Retired _ -> Error ("Retired cannot be changed to disabled.")
     | Dead _ -> Error ("Dead cannot be changed to disabled.")
 
-type System = {
-    Policies: Policy seq;
-}
-    
+let changePolicyToDisabled policy =
+    let newEventResult = 
+        policy.Events
+        |> Seq.last
+        |> createEventDisabled
+
+    match newEventResult with
+    | Ok newEvent -> Ok { policy with Events = policy.Events |> (addEvent newEvent) }
+    | Error msg -> Error msg
+
+let getPolicy (policyNumber: PolicyNumber) =
+    let covers = [ 
+        { DefaultCover.Benefit = 100m; BasicCover = G165 ((Expiry1 (create (65 * 12))), Y10) };
+        { Benefit = 100m; BasicCover = G415 ((Expiry1 (create (65 * 12)))) };
+        { Benefit = 100m; BasicCover = G211 ((Expiry1 (create (65 * 12)))) };
+    ]
+
+    {
+        PolicyNumber = policyNumber;
+        Birthday = (Birthday (DateTime(1992, 8, 2)));
+        Events = [
+            InForce ((Premium 1000m), covers |> Seq.ofList)
+        ];
+    } |> Ok
+
+let savePolicy (policy: Policy) =
+    Ok policy
+
+let reCalculate (policy: Policy) =
+    Ok policy
+
+let workflow changer =
+    getPolicy
+    >=> changer
+    >=> reCalculate
+    >=> savePolicy
+
+let disabilityWorkflow = workflow changePolicyToDisabled 
+
+match disabilityWorkflow (PolicyNumber "Pol12345") with 
+| Ok policy -> printfn "Ok: %A" (policy.Events |> Seq.last)
+| Error msg -> printfn "Fejl: %s" msg

@@ -21,5 +21,5 @@ type Policy = {
     Events: Event seq;
 }
 
-let addEvent (events: Event seq) event =
-    Ok (events |> Seq.append [event])
+let addEvent event (events: Event seq) =
+    [event] |> Seq.append events
