@@ -16,11 +16,8 @@ let getDisabledCovers (covers: DefaultCover seq) =
     covers 
     |> Seq.choose (fun cover -> 
         match cover.BasicCover with
-        | G415 expiry -> Some(cover.Benefit, expiry)
+        | G415 expiry -> Some({ Benefit = cover.Benefit; BasicCover = (G215 expiry)})
         | _ -> None
-    )
-    |> Seq.map (fun (benefit, expiry) ->
-        { Benefit = benefit; BasicCover = (G215 expiry)}
     )
     |> Ok
     |> Result.bind (fun disabledCovers ->
@@ -60,7 +57,7 @@ let changePolicyToDisabled policy =
 let getPolicy (policyNumber: PolicyNumber) =
     let covers = [ 
         { DefaultCover.Benefit = 100m; BasicCover = G165 ((Expiry1 (create (65 * 12))), Y10) };
-        { Benefit = 100m; BasicCover = G415 ((Expiry1 (create (65 * 12)))) };
+        // { Benefit = 100m; BasicCover = G415 ((Expiry1 (create (65 * 12)))) };
         { Benefit = 100m; BasicCover = G211 ((Expiry1 (create (65 * 12)))) };
     ]
 
@@ -88,4 +85,4 @@ let disabilityWorkflow = workflow changePolicyToDisabled
 
 match disabilityWorkflow (PolicyNumber "Pol12345") with 
 | Ok policy -> printfn "Ok: %A" (policy.Events |> Seq.last)
-| Error msg -> printfn "Fejl: %s" msg
+| Error msg -> printfn "There was an error: %s" msg
