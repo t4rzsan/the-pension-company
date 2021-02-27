@@ -12,13 +12,9 @@ open Events
 
 let (>=>) x y = Optional.Compose x y
 
-let getDisabledCovers (covers: DefaultCover seq) =
+let getCovers filter (covers: DefaultCover seq) =
     covers 
-    |> Seq.choose (fun cover -> 
-        match cover.BasicCover with
-        | G415 expiry -> Some({ Benefit = cover.Benefit; BasicCover = (G215 expiry)})
-        | _ -> None
-    )
+    |> Seq.choose filter
     |> Ok
     |> Result.bind (fun disabledCovers ->
         if disabledCovers |> Seq.isEmpty then
@@ -26,6 +22,14 @@ let getDisabledCovers (covers: DefaultCover seq) =
         else
             Ok (covers, disabledCovers)
     )
+
+let getDisabledCovers =
+    let filter (cover: DefaultCover) = 
+        match cover.BasicCover with
+        | G415 expiry -> Some({ Benefit = cover.Benefit; BasicCover = (G215 expiry)})
+        | _ -> None
+
+    getCovers filter
 
 let createEventDisabledFromCovers (covers, disabledCovers) =
     Ok (Disabled (disabledCovers, covers))
@@ -44,11 +48,11 @@ let createEventDisabled previousEvent =
     | Retired _ -> Error ("Retired cannot be changed to disabled.")
     | Dead _ -> Error ("Dead cannot be changed to disabled.")
 
-let changePolicyToDisabled policy =
+let changePolicy eventCreator policy =
     let newEventResult = 
         policy.Events
         |> Seq.last
-        |> createEventDisabled
+        |> eventCreator
 
     match newEventResult with
     | Ok newEvent -> Ok { policy with Events = policy.Events |> (addEvent newEvent) }
@@ -57,7 +61,7 @@ let changePolicyToDisabled policy =
 let getPolicy (policyNumber: PolicyNumber) =
     let covers = [ 
         { DefaultCover.Benefit = 100m; BasicCover = G165 ((Expiry1 (create (65 * 12))), Y10) };
-        // { Benefit = 100m; BasicCover = G415 ((Expiry1 (create (65 * 12)))) };
+        { Benefit = 100m; BasicCover = G415 ((Expiry1 (create (65 * 12)))) };
         { Benefit = 100m; BasicCover = G211 ((Expiry1 (create (65 * 12)))) };
     ]
 
@@ -81,7 +85,7 @@ let workflow changer =
     >=> reCalculate
     >=> savePolicy
 
-let disabilityWorkflow = workflow changePolicyToDisabled 
+let disabilityWorkflow = workflow (changePolicy createEventDisabled) 
 
 match disabilityWorkflow (PolicyNumber "Pol12345") with 
 | Ok policy -> printfn "Ok: %A" (policy.Events |> Seq.last)
