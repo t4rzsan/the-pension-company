@@ -1,4 +1,4 @@
-# the-pension-compay
+# the-pension-company
 
 ## Design
 * Selskabet tilbyder livrente (211), rate ved død (175) og invalidepension (415).
