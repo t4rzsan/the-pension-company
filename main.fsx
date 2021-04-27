@@ -58,6 +58,12 @@ let changePolicy eventCreator policy =
     | Ok newEvent -> Ok { policy with Events = policy.Events |> (addEvent newEvent) }
     | Error msg -> Error msg
 
+let savePolicy (policy: Policy) =
+    Ok policy
+
+let reCalculate (policy: Policy) =
+    Ok policy
+
 let getPolicy (policyNumber: PolicyNumber) =
     let covers = [ 
         { DefaultCover.Benefit = 100m; BasicCover = G165 ((Expiry1 (create (65 * 12))), Y10) };
@@ -73,15 +79,9 @@ let getPolicy (policyNumber: PolicyNumber) =
         ];
     } |> Ok
 
-let savePolicy (policy: Policy) =
-    Ok policy
-
-let reCalculate (policy: Policy) =
-    Ok policy
-
-let workflow changer =
+let workflow change =
     getPolicy
-    >=> changer
+    >=> change
     >=> reCalculate
     >=> savePolicy
 
