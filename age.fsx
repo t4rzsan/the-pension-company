@@ -1,7 +1,7 @@
 open System
 
 type Age = private Age of int
-type Expiry1 = Expiry1 of Age
+type Expiry = Expiry of Age
 type Guarantee = 
 | Y10
 | Y15

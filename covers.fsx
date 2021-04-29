@@ -2,32 +2,32 @@
 
 open Age
 
+type Benefit = Benefit of decimal
+type Premium = Premium of decimal
+type PaidOut = PaidOut of decimal
+
 type DefaultBasicCover =
-| G165 of (Expiry1 * Guarantee)
-| G415 of Expiry1
-| G211 of Expiry1
+| G165 of (Expiry * Guarantee)
+| G415 of Expiry
+| G211 of Expiry
 
 type RetiredBasicCover =
 | G210
 
 type DisabledBasicCover =
-| G215 of Expiry1
+| G215 of Expiry
 
 type DefaultCover = {
-    Benefit: decimal;
+    Benefit: Benefit;
     BasicCover: DefaultBasicCover;
 }
 
 type RetiredCover = {
-    Benefit: decimal;
+    Benefit: Benefit;
     BasicCover: RetiredBasicCover;
 }
 
 type DisabledCover = {
-    Benefit: decimal;
+    Benefit: Benefit;
     BasicCover: DisabledBasicCover;
 }
-
-type Benefit = Benefit of decimal
-type Premium = Premium of decimal
-type PaidOut = PaidOut of decimal

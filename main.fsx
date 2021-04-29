@@ -66,9 +66,9 @@ let reCalculate (policy: Policy) =
 
 let getPolicy (policyNumber: PolicyNumber) =
     let covers = [ 
-        { DefaultCover.Benefit = 100m; BasicCover = G165 ((Expiry1 (create (65 * 12))), Y10) };
-        { Benefit = 100m; BasicCover = G415 ((Expiry1 (create (65 * 12)))) };
-        { Benefit = 100m; BasicCover = G211 ((Expiry1 (create (65 * 12)))) };
+        { DefaultCover.Benefit = (Benefit 100m); BasicCover = G165 ((Expiry (create (65 * 12))), Y10) };
+        { Benefit = (Benefit 100m); BasicCover = G415 ((Expiry (create (65 * 12)))) };
+        { Benefit = (Benefit 100m); BasicCover = G211 ((Expiry (create (65 * 12)))) };
     ]
 
     {
@@ -90,3 +90,4 @@ let disabilityWorkflow = workflow (changePolicy createEventDisabled)
 match disabilityWorkflow (PolicyNumber "Pol12345") with 
 | Ok policy -> printfn "Ok: %A" (policy.Events |> Seq.last)
 | Error msg -> printfn "There was an error: %s" msg
+
