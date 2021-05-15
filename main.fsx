@@ -66,9 +66,9 @@ let reCalculate (policy: Policy) =
 
 let getPolicy (policyNumber: PolicyNumber) =
     let covers = [ 
-        { DefaultCover.Benefit = (Benefit 100m); BasicCover = G165 ((Expiry (create (65 * 12))), Y10) };
-        { Benefit = (Benefit 100m); BasicCover = G415 ((Expiry (create (65 * 12)))) };
-        { Benefit = (Benefit 100m); BasicCover = G211 ((Expiry (create (65 * 12)))) };
+        { DefaultCover.Benefit = (Benefit 100m); BasicCover = G165 ((Expiry (Age.Of (65 * 12))), Y10) };
+        { Benefit = (Benefit 100m); BasicCover = G415 ((Expiry (Age.Of (65 * 12)))) };
+        { Benefit = (Benefit 100m); BasicCover = G211 ((Expiry (Age.Of (65 * 12)))) };
     ]
 
     {

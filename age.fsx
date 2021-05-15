@@ -1,17 +1,22 @@
 open System
 
-type Age = private Age of int
-type Expiry = Expiry of Age
+type Age = 
+    private | Age' of months: int
+
+    member me.Months = 
+        let (Age' (months = value)) = me in value
+
+    static member Of months =
+        if months < 0 || months > 120 * 12 then
+            None
+        else
+            Some (Age' months)
+
+type Expiry = Expiry of Age option
+
 type Guarantee = 
 | Y10
 | Y15
 | Y20
+
 type Birthday = Birthday of DateTime
-
-let create months =
-    if months < 0 || months > 110 * 12 then
-        failwith "Age has to be between 0 and 110 years."
-
-    (Age months)
-let value (Age age) = age
-
