@@ -1,16 +1,15 @@
 open System
 
-type Age = 
-    private | Age' of months: int
+type Age = private | Age' of months: int
+    with
+        member me.Months = 
+            let (Age' (months = value)) = me in value
 
-    member me.Months = 
-        let (Age' (months = value)) = me in value
-
-    static member Of months =
-        if months < 0 || months > 120 * 12 then
-            None
-        else
-            Some (Age' months)
+        static member Of months =
+            if months < 0 || months > 120 * 12 then
+                None
+            else
+                Some (Age' months)
 
 type Expiry = Expiry of Age option
 
